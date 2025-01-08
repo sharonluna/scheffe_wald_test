@@ -5,7 +5,7 @@ This project implements a Scheffé-Wald test to perform multiple comparisons in 
 
 ```js
 tesis
-├── tesis/                     # Main implementation 
+├── MultipleTesting/                     # Main implementation 
 │   ├── multiple_comparisons.py # Statistcal tests fucntions
 │   └── visualization.py       # visualization functions
 ├── tests/                     # Test suite for the project
