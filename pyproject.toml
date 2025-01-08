@@ -13,6 +13,18 @@ pandas = "^2.2.3"
 scipy = "^1.14.1"
 
 
+[tool.poetry.group.test.dependencies]
+pandas = "^2.2.3"
+numpy = "^2.2.1"
+ipykernel = "^6.29.5"
+pathlib = "^1.0.1"
+seaborn = "^0.13.2"
+nbconvert = "^7.16.5"
+
+
+[tool.poetry.group.dev.dependencies]
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

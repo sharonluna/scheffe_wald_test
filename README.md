@@ -4,14 +4,17 @@ This project implements a Scheffé-Wald test to perform multiple comparisons in 
 # Project Structure
 
 ```js
+tesis
 ├── tesis/                     # Main implementation 
+│   ├── multiple_comparisons.py # Statistcal tests fucntions
+│   └── visualization.py       # visualization functions
 ├── tests/                     # Test suite for the project
-├── multiple_comparison_tests.py # Statistcal tests fucntions
+├── penalty_analysis
+│    ├── data # data for practical example
+│    └── implementation.ipynb
 ├── poetry.lock                
-├── pyproject.toml             
-├── README                     
-└── visualization.py            # visualization functions
-
+├── pyproject.toml                  
+└── README.md            
 ```
 
 # Features
