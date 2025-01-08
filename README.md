@@ -18,7 +18,7 @@ tesis
 ```
 
 # Features
-Scheffé-Wald Test Implementation: Includes functions to perform the Scheffé-Wald test on datasets.
+MiltipleTesting Implementation: Includes functions to perform the Scheffé-Wald, Bonferroni and tukey tests on datasets.
 * Visualization: Tools for plotting test results and visualizing group comparisons.
 * Test Suite: Comprehensive tests to validate functionality and ensure accuracy.
 * Extensibility: Can be extended to support other multiple comparison tests.
