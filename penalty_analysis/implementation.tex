@@ -23,20 +23,10 @@ INPUT_DIR = os.path.join(CURRENT_PATH, 'data')
 \end{lstlisting}
 
 \begin{lstlisting}[language=Python]
-print(sys.path)
-\end{lstlisting}
-
-\begin{lstlisting}
-['/usr/lib/python312.zip', '/usr/lib/python3.12', '/usr/lib/python3.12/lib-dynload', '', '/home/sharon/.cache/pypoetry/virtualenvs/tesis-XL-UlrQA-py3.12/lib/python3.12/site-packages']
-\end{lstlisting}
-
-\begin{lstlisting}[language=Python]
 sys.path.append(MAIN_DIR)
-sys
 
-from scheffewald.multiple_comparisons import *
-from scheffewald.visualization import *
-from scheffewald.penalty_visualizations import *
+from MultipleTesting.multiple_comparisons import *
+from MultipleTesting.visualization import *
 \end{lstlisting}
 
 \hypertarget{read-data}{%
@@ -60,15 +50,15 @@ OVERALL_LIKING['nivel'] = OVERALL_LIKING['nivel'].str.upper()
 \end{lstlisting}
 
 \begin{lstlisting}[language=Python]
-def get_counts_for_attribute(df_counts: pd.DataFrame, atributo: str) -> list:
+def get_counts_for_attribute(df_counts: pd.DataFrame, measurement: str, atributo: str) -> list:
     """
     Extracts counts in order JAR, TL, TM for a given attribute.
     """
     counts = df_counts[df_counts['atributo'] == atributo].sort_values('nivel')
     return [
-        counts[counts['nivel'] == 'JAR']['proporcion'].iloc[0],
-        counts[counts['nivel'] == 'TL']['proporcion'].iloc[0],
-        counts[counts['nivel'] == 'TM']['proporcion'].iloc[0]
+        counts[counts['nivel'] == 'JAR'][measurement].iloc[0],
+        counts[counts['nivel'] == 'TL'][measurement].iloc[0],
+        counts[counts['nivel'] == 'TM'][measurement].iloc[0]
     ]
 \end{lstlisting}
 
@@ -136,13 +126,13 @@ plot_penalty_heatmap(OVERALL_LIKING, CONTEOS, title="")
 
 \begin{figure}
 \centering
-\includegraphics{implementation_files/implementation_9_1.png}
+\includegraphics{implementation_files/implementation_8_1.png}
 \caption{png}
 \end{figure}
 
 \begin{lstlisting}[language=Python]
 df_result = pd.DataFrame()
-alpha = 0.20
+alpha = 0.1
 
 # Matriz de contraste para las comparaciones
 A = np.array([
@@ -150,204 +140,374 @@ A = np.array([
     [1, 0, -1],   # JAR vs TM
 ])
 
-for attribute in OVERALL_LIKING['atributo'].unique():
-    counts = get_counts_for_attribute(OVERALL_LIKING, attribute)
+for attribute in CONTEOS['atributo'].unique():
+    counts = get_counts_for_attribute(CONTEOS, 'sbj_num', attribute) # porportions are computed inside
 
     test = StatisticalTest(counts, alpha=alpha)
 
-    bonf_result = test.bonferroni_confidence_intervals()
-    #tukey_result = test.tukey_confidence_intervals()
-    scheffe_result = test.scheffe_wald_test(A, fisher_correction=False)
+    bonf_results = test.bonferroni_confidence_intervals()
+    tukey_results = test.tukey_confidence_intervals()
+    scheffe_results = test.scheffe_wald_test(A)
+
+    all_results = [scheffe_results, bonf_results, tukey_results]
 
     # Print results 
     print(str.upper(attribute),"*" * 70)
-    print_test_results([scheffe_result, bonf_result])
+    print_test_results(all_results)
     print("=" * 80)
 
-    for method in [scheffe_result, bonf_result]:
-        result = pd.DataFrame(format_test_results(method))
+    for method in all_results:
+        result = format_test_results_df(method)
         result['attribute'] = attribute
         
         df_result = pd.concat([df_result, result]) 
 
-df_result['p_i-p_j'] = df_result['p_i-p_j'].str.replace('0','JAR').str.replace('1','TL').str.replace('2','TM')
+df_result['p_i-p_j'] = df_result['p_i-p_j'].str.replace('0','JAR').str.replace('1','TL').str.replace('2','TM').str.replace('p_','')
 \end{lstlisting}
 
 \begin{lstlisting}
 COLOR **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.8668
-Test statistic: 0.2858
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 68.5999
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.071    [-1.907,  2.048]    nan
-0       2          0.317    [-1.213,  1.846]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.5184
-Degrees of freedom: (num=1, error=-1.1102230246251565e-16)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.0708     -0.0748     0.2164     0.2337  
+    0          2         0.3167      0.2040     0.4293     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.071    [-1.209,  1.350]    1.0000
-0       2          0.317    [-0.804,  1.437]    1.0000
-1       2          0.246    [-0.859,  1.350]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 8.0308
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.0708     -0.0250     0.1667     0.3474  
+    0          2         0.3167      0.2328     0.4006     0.0000  
+    1          2         0.2458      0.1631     0.3286     0.0000  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 11.3573
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.0708     -0.0221     0.1637     0.2595  
+    0          2         0.3167      0.2353     0.3980     0.0000  
+    1          2         0.2458      0.1656     0.3260     0.0000  
+--------------------------------------------------------------------------------
+
 ================================================================================
 CRUJIENTE **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.8141
-Test statistic: 0.4114
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 98.7376
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.358    [-1.475,  2.192]    nan
-0       2          0.467    [-1.099,  2.032]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.7779
-Degrees of freedom: (num=1, error=-1.1102230246251565e-16)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.3583      0.2233     0.4933     0.0000  
+    0          2         0.4667      0.3514     0.5819     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.358    [-0.838,  1.555]    1.0000
-0       2          0.467    [-0.633,  1.567]    1.0000
-1       2          0.108    [-0.911,  1.128]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 12.0516
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3583      0.2687     0.4480     0.0000  
+    0          2         0.4667      0.3843     0.5491     0.0000  
+    1          2         0.1083      0.0320     0.1847     0.0076  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 17.0435
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3583      0.2715     0.4452     0.0000  
+    0          2         0.4667      0.3868     0.5465     0.0000  
+    1          2         0.1083      0.0343     0.1823     0.0079  
+--------------------------------------------------------------------------------
+
 ================================================================================
 OLOR **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.9576
-Test statistic: 0.0866
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 20.7804
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.208    [-1.596,  2.012]    nan
-0       2          0.229    [-1.536,  1.994]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.3466
-Degrees of freedom: (num=1, error=0.0)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.2083      0.0755     0.3411     0.0001  
+    0          2         0.2292      0.0992     0.3591     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.208    [-1.018,  1.435]    1.0000
-0       2          0.229    [-0.983,  1.442]    1.0000
-1       2          0.021    [-1.117,  1.159]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 5.3701
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.2083      0.1165     0.3002     0.0000  
+    0          2         0.2292      0.1384     0.3200     0.0000  
+    1          2         0.0208     -0.0644     0.1061     1.0000  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 7.5945
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.2083      0.1193     0.2973     0.0000  
+    0          2         0.2292      0.1412     0.3172     0.0000  
+    1          2         0.0208     -0.0618     0.1034     0.8616  
+--------------------------------------------------------------------------------
+
 ================================================================================
 POROSIDAD **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.8479
-Test statistic: 0.3300
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 79.2026
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.354    [-1.457,  2.165]    nan
-0       2          0.433    [-1.188,  2.054]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.7058
-Degrees of freedom: (num=1, error=-1.1102230246251565e-16)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.3542      0.2208     0.4875     0.0000  
+    0          2         0.4333      0.3140     0.5527     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.354    [-0.840,  1.548]    1.0000
-0       2          0.433    [-0.693,  1.559]    1.0000
-1       2          0.079    [-0.957,  1.116]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 10.9348
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3542      0.2647     0.4436     0.0000  
+    0          2         0.4333      0.3490     0.5177     0.0000  
+    1          2         0.0792      0.0015     0.1568     0.0900  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 15.4641
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3542      0.2675     0.4409     0.0000  
+    0          2         0.4333      0.3516     0.5151     0.0000  
+    1          2         0.0792      0.0039     0.1544     0.0785  
+--------------------------------------------------------------------------------
+
 ================================================================================
 QUESO **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.8394
-Test statistic: 0.3501
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 84.0268
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.250    [-1.664,  2.164]    nan
-0       2          0.413    [-1.143,  1.968]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.6794
-Degrees of freedom: (num=1, error=-1.1102230246251565e-16)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.2500      0.1090     0.3910     0.0000  
+    0          2         0.4125      0.2979     0.5271     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.250    [-0.992,  1.492]    1.0000
-0       2          0.413    [-0.701,  1.526]    1.0000
-1       2          0.163    [-0.896,  1.221]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 10.5248
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.2500      0.1570     0.3430     0.0000  
+    0          2         0.4125      0.3291     0.4959     0.0000  
+    1          2         0.1625      0.0832     0.2418     0.0000  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 14.8843
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.2500      0.1598     0.3402     0.0000  
+    0          2         0.4125      0.3317     0.4933     0.0000  
+    1          2         0.1625      0.0857     0.2393     0.0001  
+--------------------------------------------------------------------------------
+
 ================================================================================
 SAL **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.8912
-Test statistic: 0.2303
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 55.2824
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.354    [-1.392,  2.100]    nan
-0       2          0.358    [-1.378,  2.095]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.5580
-Degrees of freedom: (num=1, error=-1.1102230246251565e-16)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.3542      0.2256     0.4827     0.0000  
+    0          2         0.3583      0.2305     0.4862     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.354    [-0.827,  1.535]    1.0000
-0       2          0.358    [-0.819,  1.536]    1.0000
-1       2          0.004    [-1.061,  1.069]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 8.6451
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3542      0.2657     0.4426     0.0000  
+    0          2         0.3583      0.2701     0.4465     0.0000  
+    1          2         0.0042     -0.0756     0.0839     1.0000  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 12.2261
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3542      0.2684     0.4399     0.0000  
+    0          2         0.3583      0.2729     0.4438     0.0000  
+    1          2         0.0042     -0.0731     0.0815     0.9932  
+--------------------------------------------------------------------------------
+
 ================================================================================
 TEXTURA **********************************************************************
 
-Scheffé-Wald results:
-Overall p-value: 0.7353
-Test statistic: 0.6149
+--------------------------------------------------------------------------------
+Scheffé-Wald Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 147.5684
 Degrees of freedom: (df=2)
 
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
 --------------------------------------------------------------------------------
-0       1          0.350    [-1.532,  2.232]    nan
-0       2          0.513    [-0.953,  1.978]    nan
-
-Bonferroni results:
-Overall p-value: 1.0000
-Test statistic: 0.8895
-Degrees of freedom: (num=1, error=-1.1102230246251565e-16)
-
-Pairwise Comparisons:
-Category i  Category j  Difference  80.00% CI       p-value
+    0          1         0.3500      0.2114     0.4886     0.0000  
+    0          2         0.5125      0.4046     0.6204     0.0000  
 --------------------------------------------------------------------------------
-0       1          0.350    [-0.857,  1.557]    1.0000
-0       2          0.513    [-0.544,  1.569]    1.0000
-1       2          0.163    [-0.832,  1.157]    1.0000
+
+
+--------------------------------------------------------------------------------
+Bonferroni Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 13.7795
+Degrees of freedom: (num=1, error=239.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3500      0.2596     0.4404     0.0000  
+    0          2         0.5125      0.4334     0.5916     0.0000  
+    1          2         0.1625      0.0880     0.2370     0.0000  
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Tukey Results:
+--------------------------------------------------------------------------------
+Overall p-value: 0.0000
+Test statistic: 19.4871
+Degrees of freedom: (num=2, error=237.0)
+
+Pairwise Comparisons (90.0% Confidence Intervals):
+Category i Category j  Difference   CI Lower   CI Upper   p-value  
+--------------------------------------------------------------------------------
+    0          1         0.3500      0.2624     0.4376     0.0000  
+    0          2         0.5125      0.4358     0.5892     0.0000  
+    1          2         0.1625      0.0903     0.2347     0.0000  
+--------------------------------------------------------------------------------
+
 ================================================================================
 \end{lstlisting}
 
@@ -372,7 +532,7 @@ axes = axes.flatten()
 # Plot for each attribute
 for idx, attr in enumerate(attributes):
     ax = axes[idx]
-    attr_data = df_result[df_result['attribute'] == attr]
+    attr_data = df_result[(df_result['attribute'] == attr ) & (df_result['p_i-p_j'] != 'TL-TM')]
     
     y_positions = []
     y_labels = []
@@ -425,7 +585,7 @@ plt.show()
 
 \begin{figure}
 \centering
-\includegraphics{implementation_files/implementation_13_1.png}
+\includegraphics{implementation_files/implementation_12_1.png}
 \caption{png}
 \end{figure}
 

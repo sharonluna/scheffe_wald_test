@@ -18,7 +18,7 @@ tesis
 ```
 
 # Features
-MiltipleTesting Implementation: Includes functions to perform the Scheffé-Wald, Bonferroni and tukey tests on datasets.
+Scheffé-Wald Test Implementation: Includes functions to perform the Scheffé-Wald test on datasets.
 * Visualization: Tools for plotting test results and visualizing group comparisons.
 * Test Suite: Comprehensive tests to validate functionality and ensure accuracy.
 * Extensibility: Can be extended to support other multiple comparison tests.
@@ -40,7 +40,7 @@ poetry install
 
 2. Run the Scheffé-Wald test:
 ```bash
-poetry run python MultipleTesting/multiple_comparisons.py --data input.csv --alpha 0.05
+poetry run python tesis/run_scheffe_test.py --data input.csv --alpha 0.05
 ```
 
 3. Visualize results:
@@ -48,7 +48,7 @@ poetry run python MultipleTesting/multiple_comparisons.py --data input.csv --alp
 Use the ``visualization.py`` script to generate plots of the test outcomes.
 Example:
 ```bash
-poetry run python MultipleTesting/visualization.py --data results.csv
+poetry run python visualization/plot_results.py --data results.csv
 ```
 
 # Configuration
